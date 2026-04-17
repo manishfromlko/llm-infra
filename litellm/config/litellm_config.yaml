@@ -1,0 +1,11 @@
+model_list:
+  - model_name: qwen-3b
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen2.5-3B-Instruct
+      api_base: http://100.115.239.14:8080/v1
+      api_key: EMPTY
+
+litellm_settings:
+  callbacks: ["langfuse"]
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]

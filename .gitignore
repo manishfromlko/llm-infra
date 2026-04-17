@@ -1,0 +1,9 @@
+# Ignore all .env files anywhere
+.env
+*.env
+
+# Ignore any file ending with .env (e.g. .prod.env, .local.env)
+**/*.env
+
+# Ignore data directory completely
+litellm/data/
