@@ -23,10 +23,11 @@ source .venv/bin/activate
 
 ## 2. Prepare environment files
 
-Before starting the runtime stack, create a dedicated LitellM env file and set the Langfuse integration values.
+Before starting the runtime stack, create a dedicated LitellM env file and a Langfuse env file.
 
 ```bash
 cp litellm/.env.example litellm/.env
+cp langfuse/.env.example langfuse/.env
 ```
 
 Then edit `litellm/.env` and set:
@@ -34,7 +35,15 @@ Then edit `litellm/.env` and set:
 - `LANGFUSE_SECRET_KEY`
 - `LANGFUSE_HOST`
 
-Also verify the LitellM internal DB URL is set correctly:
+Then edit `langfuse/.env` and set:
+- `NEXTAUTH_SECRET`
+- `LANGFUSE_INIT_USER_EMAIL`
+- `LANGFUSE_INIT_USER_NAME`
+- `LANGFUSE_INIT_USER_PASSWORD`
+- `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`
+- `LANGFUSE_INIT_PROJECT_SECRET_KEY`
+
+Also verify the LiteLLM internal DB URL is set correctly:
 
 ```bash
 DATABASE_URL=postgresql://postgres:password@litellm-postgres:5432/litellm
