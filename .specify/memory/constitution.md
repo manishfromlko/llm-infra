@@ -1,50 +1,82 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+Version change: N/A → 1.0.0
+Modified principles: added 7 mandatory principle sections for API gateway governance, observability, model serving, cost tracking, reliability, security, and developer experience
+Added sections: Infrastructure Constraints; Implementation & Test Requirements
+Removed sections: none
+Templates reviewed: .specify/templates/plan-template.md ✅ no change required; .specify/templates/spec-template.md ✅ no change required; .specify/templates/tasks-template.md ✅ no change required; .specify/templates/constitution-template.md ✅ no change required
+Follow-up TODOs: none
+-->
+
+# LLM Infrastructure Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### API Gateway Governance
+LiteLLM is the only public ingress for all client requests. Every request MUST be authenticated using a unique API key and MUST carry explicit `team_id` and `user_id` metadata.
+- All requests MUST be routed through LiteLLM only.
+- Direct client access to vLLM endpoints is forbidden.
+- LiteLLM MUST log input tokens, output tokens, total tokens, and latency metrics for p50, p95, and p99.
+- LiteLLM MUST enforce per-API key rate limits, quotas, retries, and fallback behavior.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### Observability & Traceability
+Every request MUST be traced end-to-end across LiteLLM and vLLM with structured JSON telemetry.
+- Traces MUST include prompt, response, model used, queue time, inference time, total latency, and business metadata including `team_id`, `api_key`, and `user_id`.
+- Correlation IDs MUST be propagated across LiteLLM → vLLM and included in every request and log entry.
+- Logs MUST be structured JSON and include all observability metadata required for debugging, audit, and cost attribution.
+- Langfuse MUST capture request-level traces, model-level metrics, latency breakdowns, and prompt/response logs.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### Model Serving Abstraction
+Model serving MUST be abstracted behind LiteLLM routing so clients never access vLLM directly.
+- LiteLLM MUST perform routing to vLLM-hosted models, including model version selection and dynamic routing.
+- vLLM endpoints MUST remain internal-only and inaccessible to clients.
+- Model serving MUST support horizontal scaling, model versioning, and routing policy changes without client-side configuration changes.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### Cost & Usage Accountability
+Token and cost accounting MUST be tracked at both the API key and team scope for every request.
+- Usage data MUST include input tokens, output tokens, total tokens, and request cost estimate.
+- Cost estimation logic MUST run per request and be available to dashboards and downstream billing workflows.
+- Aggregated dashboards MUST be ready to report per-key, per-team, and per-use-case usage and cost trends.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### Reliability & Performance
+The system MUST meet defined SLAs through explicit timeouts, retries, and circuit-breaking controls.
+- Define and publish latency targets and uptime expectations before production deployment.
+- Circuit breakers MUST protect downstream vLLM services from overload.
+- Requests MUST use timeouts and retries with exponential backoff.
+- Performance metrics MUST include throughput and latency distributions to prove SLA compliance.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### Security & Compliance
+Secrets MUST never be stored in code. Security and audit controls are required for all production data and logs.
+- API keys MUST be securely stored, hashed, and validated outside source code.
+- Prompt and response logging MUST support redaction for sensitive data.
+- Audit logging MUST capture authentication events, administrative changes, and request routing decisions.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### Developer Experience
+The architecture MUST be simple, modular, and aligned with enterprise-grade self-hosted LLM operations.
+- The design MUST maintain a clear separation between gateway, observability, and model serving layers.
+- Dependencies MUST remain minimal and intentional.
+- The solution MUST avoid over-engineering by keeping each layer focused on its core responsibility.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Infrastructure Constraints
+The deployment model MUST support the stated 5-layer architecture and self-hosted requirements.
+- Infra Layer: single-node RTX 3060 GPU for vLLM inference.
+- Serving Layer: vLLM as the model execution engine behind LiteLLM.
+- Observability Layer: Langfuse for distributed tracing, metrics, evals, and prompt management.
+- Routing Layer: LiteLLM MUST act as the API gateway, cost tracker, guardrail enforcer, load balancer, and request logger.
+- Client Layer: standard Python SDK clients access only LiteLLM endpoints using issued API keys.
+- Docker Compose definitions MUST be provided for Langfuse and LiteLLM deployments that follow industry standards for observability and secure configuration.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Implementation & Test Requirements
+End-to-end testing MUST validate the full LiteLLM → vLLM → Langfuse path independently from development tooling.
+- Separate E2E tests MUST cover authentication, routing, observability, token accounting, retry behavior, and failure handling.
+- Deployment artifacts MUST include docker-compose files for Langfuse and LiteLLM with secure environment configuration.
+- Documentation MUST explicitly describe how to provision API keys, enable tracing, and enforce team-level policies.
+- Every architectural decision MUST be justified by the principles in this constitution.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+This constitution is authoritative for self-hosted LLM infrastructure decisions and supersedes informal practices.
+- All design and implementation work MUST be reviewed against this constitution before approval.
+- Amendments MUST be documented, approved, and versioned with a clear rationale.
+- Compliance reviews MUST verify API gateway governance, observability coverage, model serving isolation, cost tracking, reliability safeguards, security controls, and developer ergonomics.
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-04-18 | **Last Amended**: 2026-04-18
