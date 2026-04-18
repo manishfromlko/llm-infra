@@ -1,0 +1,19 @@
+# Core dependencies
+pydantic>=1.9.0,<2.0.0
+httpx>=0.23.0
+litellm>=0.1.0
+
+# Testing dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.20.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+
+# Development dependencies
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.990
+isort>=5.10.0
+
+# YAML support
+pyyaml>=6.0

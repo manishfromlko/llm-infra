@@ -1,28 +1,41 @@
 # Feature Test Steps
 
-## 1. Install the runtime/test dependencies
+## 1. Set up the project for the first feature test
 From the repository root:
 
 ```bash
 cd /Users/manish/mount/spec-kit/llm-infra
-pip install -r litellm/requirements.txt
+```
+
+Initialize the UV project and create the environment:
+
+```bash
+uv init --bare --name llm-infra --description "LiteLLM → Langfuse tracing feature"
+uv venv .venv
+uv pip install -r requirements.txt
+```
+
+If you want to use the virtual environment directly instead of `uv run`, activate it:
+
+```bash
+source .venv/bin/activate
 ```
 
 ## 2. Run the local Python tests
 
 ### Unit tests
 ```bash
-pytest litellm/tests/unit/ -q
+uv run pytest litellm/tests/unit/ -q
 ```
 
 ### Contract tests
 ```bash
-pytest litellm/tests/contract/ -q
+uv run pytest litellm/tests/contract/ -q
 ```
 
 ### Integration smoke test
 ```bash
-pytest litellm/tests/integration/test_e2e_request_tracing.py -q
+uv run pytest litellm/tests/integration/test_e2e_request_tracing.py -q
 ```
 
 These commands verify the core trace schema, metadata handling, correlation IDs, and the callback flow.
