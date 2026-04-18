@@ -42,6 +42,12 @@ DATABASE_URL=postgresql://postgres:password@litellm-postgres:5432/litellm
 
 ## 3. Run the real runtime stack with Docker Compose
 
+Before starting, clean up any stale containers from previous runs:
+
+```bash
+docker compose -f litellm/docker-compose.yaml -f langfuse/docker-compose.yml down --remove-orphans
+```
+
 Start Langfuse and LiteLLM together so the full trace path is live:
 
 ```bash
