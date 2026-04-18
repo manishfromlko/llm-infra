@@ -21,24 +21,24 @@ If you want to use the virtual environment directly instead of `uv run`, activat
 source .venv/bin/activate
 ```
 
-## 2. Run the local Python tests
+## 2. Prepare environment files
 
-### Unit tests
+Before starting the runtime stack, create a dedicated LitellM env file and set the Langfuse integration values.
+
 ```bash
-uv run pytest litellm/tests/unit/ -q
+cp litellm/.env.example litellm/.env
 ```
 
-### Contract tests
-```bash
-uv run pytest litellm/tests/contract/ -q
-```
+Then edit `litellm/.env` and set:
+- `LANGFUSE_PUBLIC_KEY`
+- `LANGFUSE_SECRET_KEY`
+- `LANGFUSE_HOST`
 
-### Integration smoke test
-```bash
-uv run pytest litellm/tests/integration/test_e2e_request_tracing.py -q
-```
+Also verify the LitellM internal DB URL is set correctly:
 
-These commands verify the core trace schema, metadata handling, correlation IDs, and the callback flow.
+```bash
+DATABASE_URL=postgresql://postgres:password@litellm-postgres:5432/litellm
+```
 
 ## 3. Run the real runtime stack with Docker Compose
 
@@ -47,6 +47,20 @@ Start Langfuse and LiteLLM together so the full trace path is live:
 ```bash
 docker compose -f litellm/docker-compose.yaml -f langfuse/docker-compose.yml up --build
 ```
+
+This combined stack now uses separate Postgres services:
+- `litellm-postgres` for LiteLLM (internal-only, no host port mapping)
+- `postgres` for Langfuse (host port `127.0.0.1:5432`)
+
+That means port `5432` on localhost is reserved for the Langfuse Postgres service, while LiteLLM connects to its own internal `litellm-postgres` service.
+
+If you want to validate the merged compose before starting it:
+
+```bash
+docker compose -f litellm/docker-compose.yaml -f langfuse/docker-compose.yml config --services
+```
+
+If you see `litellm-postgres` and `postgres` both listed, the separation is correct.
 
 Adjust compose file paths if your repository uses a different local setup.
 
