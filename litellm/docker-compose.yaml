@@ -20,4 +20,5 @@ services:
       - LITELLM_LOG=DEBUG
     volumes:
       - ./config/litellm_config.yaml:/app/config.yaml
+      - ./config/api_keys.json:/app/config/api_keys.json
     command: ["--config", "/app/config.yaml", "--port", "4000"]

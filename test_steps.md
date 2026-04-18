@@ -141,6 +141,8 @@ This confirms the plain key and hash mapping, but the request header itself must
 
 Once you have determined a valid API key (from step 4), use the plain-text key in the curl request. Do not pass the SHA-256 hash from `api_keys.json`.
 
+> Note: if you change `litellm/config/api_keys.json`, restart the LiteLLM container so the new file is mounted and reloaded.
+
 ```bash
 curl -X POST http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
