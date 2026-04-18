@@ -4,8 +4,43 @@ model_list:
       model: hosted_vllm/Qwen/Qwen2.5-3B-Instruct
       api_base: http://100.115.239.14:8080/v1
       api_key: EMPTY
+  
+  - model_name: mistral-7b
+    litellm_params:
+      model: openai/mistral-7b-instruct
+      api_base: http://vllm:8000/v1
+      api_key: not-needed
+  
+  - model_name: mistral-7b-instruct
+    litellm_params:
+      model: openai/mistral-7b-instruct
+      api_base: http://vllm:8000/v1
+      api_key: not-needed
 
 litellm_settings:
   callbacks: ["langfuse"]
   success_callback: ["langfuse"]
   failure_callback: ["langfuse"]
+
+# Langfuse integration configuration
+langfuse_config:
+  enabled: true
+  public_key: "${LANGFUSE_PUBLIC_KEY}"
+  secret_key: "${LANGFUSE_SECRET_KEY}"
+  host: "http://langfuse:3000"
+  callback: "litellm_langfuse_callback"
+  trace_buffer_dir: "/app/data/trace_buffer"
+  trace_buffer_max_size_mb: 100
+  batch_size: 10
+  flush_interval_seconds: 60
+
+# API key validation configuration
+api_keys:
+  store: "file"
+  file_path: "/app/config/api_keys.json"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "json"
+  output: "stdout"

@@ -1,0 +1,22 @@
+{
+  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855": {
+    "key_id": "key-001",
+    "team_id": "team-1",
+    "user_id": "user-1",
+    "status": "active",
+    "created_at": "2026-04-18T10:00:00Z",
+    "rate_limit_rpm": 1000,
+    "rate_limit_tokens_per_day": 1000000,
+    "description": "Test key for team-1"
+  },
+  "5feceb66ffc86f38d952786c6d696c79c2dbc238c4cafb11f2271d7a122a75f0": {
+    "key_id": "key-002",
+    "team_id": "team-2",
+    "user_id": "user-1",
+    "status": "active",
+    "created_at": "2026-04-18T10:00:00Z",
+    "rate_limit_rpm": 500,
+    "rate_limit_tokens_per_day": 500000,
+    "description": "Test key for team-2"
+  }
+}
