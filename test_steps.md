@@ -42,6 +42,10 @@ Then edit `langfuse/.env` and set:
 - `LANGFUSE_INIT_USER_PASSWORD`
 - `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`
 - `LANGFUSE_INIT_PROJECT_SECRET_KEY`
+- `LANGFUSE_SERVICE_POSTGRES_USER`
+- `LANGFUSE_SERVICE_POSTGRES_PASSWORD`
+- `LANGFUSE_SERVICE_POSTGRES_DB`
+- `LANGFUSE_SERVICE_DATABASE_URL`
 
 Also verify the LiteLLM internal DB URL is set correctly:
 
@@ -75,7 +79,7 @@ If you want to validate the merged compose before starting it:
 docker compose -f litellm/docker-compose.yaml -f langfuse/docker-compose.yml config --services
 ```
 
-If you see `litellm-postgres` and `postgres` both listed, the separation is correct.
+If you see `litellm-postgres` and `postgres` both listed, the separation is correct. No `WARN` output should appear—all environment variables are now properly scoped.
 
 Adjust compose file paths if your repository uses a different local setup.
 
