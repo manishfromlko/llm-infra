@@ -83,14 +83,93 @@ If you see `litellm-postgres` and `postgres` both listed, the separation is corr
 
 Adjust compose file paths if your repository uses a different local setup.
 
-## 4. Send a real request through LiteLLM
+## 4. Set up LiteLLM API keys and models (prerequisites before curl)
+
+The curl request requires valid API keys and models to be configured in LiteLLM.
+
+### Check model configuration
+
+Verify that `qwen-3b` model is already configured in `litellm/config/litellm_config.yaml`:
 
 ```bash
+grep -A3 "model_name: qwen-3b" litellm/config/litellm_config.yaml
+```
+
+If the model is defined, you should see it listed. The vLLM backend is configured to serve this model internally.
+
+### Generate or verify API keys
+
+The API keys are stored as SHA-256 hashes in `litellm/config/api_keys.json`. Each entry maps a hashed key to team/user metadata.
+
+To use the pre-configured test key, you need to:
+
+1. **Option A: Use a Python script to generate a valid test key**
+
+```bash
+uv run python3 << 'EOF'
+import hashlib
+
+# Generate a test API key
+test_key = "sk-test-key"
+hashed = hashlib.sha256(test_key.encode()).hexdigest()
+print(f"Plain key: {test_key}")
+print(f"SHA-256 hash: {hashed}")
+EOF
+```
+
+Then update `litellm/config/api_keys.json` to include this hash as a key:
+
+```json
+{
+  "HASHED_VALUE_HERE": {
+    "key_id": "key-test",
+    "team_id": "team-1",
+    "user_id": "user-1",
+    "status": "active",
+    "rate_limit_rpm": 1000,
+    "rate_limit_tokens_per_day": 1000000
+  }
+}
+```
+
+2. **Option B: Use one of the pre-configured sample keys**
+
+The `api_keys.json` already contains sample keys. To find a plain key that matches:
+
+```bash
+uv run python3 << 'EOF'
+import hashlib
+import json
+
+# Known sample key that hashes to the first entry
+sample_key = "sk-test-key-1"  # Example, adjust based on your setup
+hashed = hashlib.sha256(sample_key.encode()).hexdigest()
+
+# Check if it matches any entry in api_keys.json
+with open("litellm/config/api_keys.json") as f:
+    api_keys = json.load(f)
+    
+if hashed in api_keys:
+    print(f"✓ Key {sample_key} is valid")
+    print(f"  Team: {api_keys[hashed]['team_id']}")
+    print(f"  User: {api_keys[hashed]['user_id']}")
+else:
+    print(f"✗ Key {sample_key} not found in api_keys.json")
+    print(f"Available hashed keys: {list(api_keys.keys())}")
+EOF
+```
+
+## 5. Send a real request through LiteLLM
+
+Once you have determined a valid API key (from step 4), use it in the curl request:
+
+```bash
+# Replace SK_TEST_KEY_HERE with the plain-text key you generated or verified
 curl -X POST http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "X-Team-Id: team-1" \
   -H "X-User-Id: user-1" \
-  -H "X-Api-Key: sk-test-key" \
+  -H "X-Api-Key: SK_TEST_KEY_HERE" \
   -H "X-Correlation-Id: $(uuidgen)" \
   -d '{
     "model": "qwen-3b",
@@ -100,24 +179,31 @@ curl -X POST http://localhost:4000/v1/chat/completions \
 
 Verify:
 - LiteLLM returns a valid OpenAI-compatible response
-- `response.usage` is present
-- the request is authenticated and not blocked
+- `response.usage` is present (prompt_tokens, completion_tokens, total_tokens)
+- the request is authenticated and not blocked with a 401 error
 
 ## 5. Verify trace delivery in Langfuse
 
+After successfully sending a request via LiteLLM, you should see traces appear in Langfuse.
+
 ### Option A: Langfuse UI
-- Open the Langfuse dashboard
-- Confirm a new trace arrived
+- Open the Langfuse dashboard at `http://localhost:3000`
+- Log in with credentials from `langfuse/.env`:
+  - Email: `LANGFUSE_INIT_USER_EMAIL`
+  - Password: `LANGFUSE_INIT_USER_PASSWORD`
+- Navigate to the project: `LANGFUSE_INIT_PROJECT_NAME`
+- Confirm a new trace arrived for your chat completion request
 - Check metadata fields: `team_id`, `user_id`, `correlation_id`, token usage, latency
 
 ### Option B: Buffer fallback verification
 If Langfuse is unavailable:
-- stop the Langfuse service
-- send another request
-- confirm LiteLLM still returns successfully
-- inspect `litellm/data/trace_buffer/trace_buffer.jsonl`
-
-If the trace is buffered, the offline resilience path is working.
+- Stop the Langfuse service: `docker compose stop langfuse-web`
+- Send another request via LiteLLM (it should still succeed)
+- Confirm LiteLLM returns a response (not blocked by trace failure)
+- Inspect `litellm/data/trace_buffer/trace_buffer.jsonl` on the host
+- If traces are buffered as JSONL, the offline resilience path is working
+- Start Langfuse again: `docker compose up langfuse-web`
+- Confirm the buffer flush task retries and moves traces to Langfuse
 
 ## 6. Test failure and retry behavior
 
