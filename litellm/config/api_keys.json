@@ -1,5 +1,5 @@
 {
-  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855": {
+  "498875a2e1c4c180457ef178e0bda1a0d946c68e7bb53673252c8e036cff6e51": {
     "key_id": "key-001",
     "team_id": "team-1",
     "user_id": "user-1",
@@ -9,7 +9,7 @@
     "rate_limit_tokens_per_day": 1000000,
     "description": "Test key for team-1"
   },
-  "5feceb66ffc86f38d952786c6d696c79c2dbc238c4cafb11f2271d7a122a75f0": {
+  "605c5dbbfad7bf33953878e8714057dfc70e627382a0d171e9a3fb9221ccabcf": {
     "key_id": "key-002",
     "team_id": "team-2",
     "user_id": "user-1",

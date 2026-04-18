@@ -99,83 +99,62 @@ If the model is defined, you should see it listed. The vLLM backend is configure
 
 ### Generate or verify API keys
 
-The API keys are stored as SHA-256 hashes in `litellm/config/api_keys.json`. Each entry maps a hashed key to team/user metadata.
+The API keys are stored as SHA-256 hashes in `litellm/config/api_keys.json`. LiteLLM expects the `X-Api-Key` header to contain the plain API key; it hashes the key internally and compares that hash to the stored entries.
 
-To use the pre-configured test key, you need to:
+The current sample keys are:
 
-1. **Option A: Use a Python script to generate a valid test key**
+- `sk-test-key-team1-user1-12345` → team-1 / user-1
+- `sk-test-key-team2-user1-67890` → team-2 / user-1
 
-```bash
-uv run python3 << 'EOF'
-import hashlib
+Use one of those plain values in `X-Api-Key`.
 
-# Generate a test API key
-test_key = "sk-test-key"
-hashed = hashlib.sha256(test_key.encode()).hexdigest()
-print(f"Plain key: {test_key}")
-print(f"SHA-256 hash: {hashed}")
-EOF
-```
-
-Then update `litellm/config/api_keys.json` to include this hash as a key:
-
-```json
-{
-  "HASHED_VALUE_HERE": {
-    "key_id": "key-test",
-    "team_id": "team-1",
-    "user_id": "user-1",
-    "status": "active",
-    "rate_limit_rpm": 1000,
-    "rate_limit_tokens_per_day": 1000000
-  }
-}
-```
-
-2. **Option B: Use one of the pre-configured sample keys**
-
-The `api_keys.json` already contains sample keys. To find a plain key that matches:
+If you want to verify the mappings, run:
 
 ```bash
 uv run python3 << 'EOF'
 import hashlib
 import json
 
-# Known sample key that hashes to the first entry
-sample_key = "sk-test-key-1"  # Example, adjust based on your setup
-hashed = hashlib.sha256(sample_key.encode()).hexdigest()
+sample_keys = [
+    "sk-test-key-team1-user1-12345",
+    "sk-test-key-team2-user1-67890",
+]
 
-# Check if it matches any entry in api_keys.json
 with open("litellm/config/api_keys.json") as f:
     api_keys = json.load(f)
-    
-if hashed in api_keys:
-    print(f"✓ Key {sample_key} is valid")
-    print(f"  Team: {api_keys[hashed]['team_id']}")
-    print(f"  User: {api_keys[hashed]['user_id']}")
-else:
-    print(f"✗ Key {sample_key} not found in api_keys.json")
-    print(f"Available hashed keys: {list(api_keys.keys())}")
+
+for sample_key in sample_keys:
+    hashed = hashlib.sha256(sample_key.encode()).hexdigest()
+    print(sample_key)
+    print("  hash:", hashed)
+    print("  valid:", hashed in api_keys)
+    if hashed in api_keys:
+        info = api_keys[hashed]
+        print("  team:", info["team_id"], "user:", info["user_id"])
+    print()
 EOF
 ```
 
+This confirms the plain key and hash mapping, but the request header itself must remain plain text.
+
 ## 5. Send a real request through LiteLLM
 
-Once you have determined a valid API key (from step 4), use it in the curl request:
+Once you have determined a valid API key (from step 4), use the plain-text key in the curl request. Do not pass the SHA-256 hash from `api_keys.json`.
 
 ```bash
-# Replace SK_TEST_KEY_HERE with the plain-text key you generated or verified
 curl -X POST http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "X-Team-Id: team-1" \
   -H "X-User-Id: user-1" \
-  -H "X-Api-Key: SK_TEST_KEY_HERE" \
+  -H "X-Api-Key: sk-test-key-team1-user1-12345" \
   -H "X-Correlation-Id: $(uuidgen)" \
   -d '{
     "model": "qwen-3b",
     "messages": [{"role": "user", "content": "Hello"}]
   }'
 ```
+
+If you need team-2 instead, use `sk-test-key-team2-user1-67890`.
 
 Verify:
 - LiteLLM returns a valid OpenAI-compatible response
