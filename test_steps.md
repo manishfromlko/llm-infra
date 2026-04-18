@@ -31,21 +31,24 @@ cp langfuse/.env.example langfuse/.env
 ```
 
 Then edit `litellm/.env` and set:
-- `LANGFUSE_PUBLIC_KEY`
-- `LANGFUSE_SECRET_KEY`
-- `LANGFUSE_HOST`
+- `LANGFUSE_PUBLIC_KEY=pk-lf-example`
+- `LANGFUSE_SECRET_KEY=sk-lf-example`
+- `LANGFUSE_HOST=http://langfuse-web:3000`
 
 Then edit `langfuse/.env` and set:
-- `NEXTAUTH_SECRET`
-- `LANGFUSE_INIT_USER_EMAIL`
-- `LANGFUSE_INIT_USER_NAME`
-- `LANGFUSE_INIT_USER_PASSWORD`
-- `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`
-- `LANGFUSE_INIT_PROJECT_SECRET_KEY`
-- `LANGFUSE_SERVICE_POSTGRES_USER`
-- `LANGFUSE_SERVICE_POSTGRES_PASSWORD`
-- `LANGFUSE_SERVICE_POSTGRES_DB`
-- `LANGFUSE_SERVICE_DATABASE_URL`
+- `NEXTAUTH_SECRET=mysecret`
+- `LANGFUSE_INIT_USER_EMAIL=admin@example.com`
+- `LANGFUSE_INIT_USER_NAME=admin`
+- `LANGFUSE_INIT_USER_PASSWORD=ChangeMe123!`
+- `LANGFUSE_INIT_ORG_ID=my-llm-org`
+- `LANGFUSE_INIT_ORG_NAME=MyLLMOrg`
+- `LANGFUSE_INIT_PROJECT_ID=my-llm-project`
+- `LANGFUSE_INIT_PROJECT_NAME=MyLLMProject`
+- `LANGFUSE_INIT_PROJECT_PUBLIC_KEY=pk-lf-example`
+- `LANGFUSE_INIT_PROJECT_SECRET_KEY=sk-lf-example`
+- `LANGFUSE_SERVICE_POSTGRES_USER=postgres`
+- `LANGFUSE_SERVICE_POSTGRES_PASSWORD=postgres`
+- `LANGFUSE_SERVICE_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres`
 
 Also verify the LiteLLM internal DB URL is set correctly:
 
@@ -146,17 +149,14 @@ Once you have determined a valid API key (from step 4), use the plain-text key i
 ```bash
 curl -X POST http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "X-Team-Id: team-1" \
-  -H "X-User-Id: user-1" \
-  -H "X-Api-Key: sk-test-key-team1-user1-12345" \
-  -H "X-Correlation-Id: $(uuidgen)" \
+  -H "X-Api-Key: sk-1234" \
   -d '{
     "model": "qwen-3b",
     "messages": [{"role": "user", "content": "Hello"}]
   }'
 ```
 
-If you need team-2 instead, use `sk-test-key-team2-user1-67890`.
+> **Note**: Currently using the master key `sk-1234` for testing. File-based authentication with custom API keys is configured but not yet active. The master key bypasses all authentication checks.
 
 Verify:
 - LiteLLM returns a valid OpenAI-compatible response
@@ -165,26 +165,25 @@ Verify:
 
 ## 5. Verify trace delivery in Langfuse
 
+> **Note**: Langfuse automatic initialization is not working yet. The INIT environment variables are set but the org/project is not being created. Traces may not appear in Langfuse until this is resolved.
+
 After successfully sending a request via LiteLLM, you should see traces appear in Langfuse.
 
 ### Option A: Langfuse UI
 - Open the Langfuse dashboard at `http://localhost:3000`
+- **Note**: May need manual setup of org/project if automatic initialization fails
 - Log in with credentials from `langfuse/.env`:
-  - Email: `LANGFUSE_INIT_USER_EMAIL`
-  - Password: `LANGFUSE_INIT_USER_PASSWORD`
-- Navigate to the project: `LANGFUSE_INIT_PROJECT_NAME`
+  - Email: `admin@example.com`
+  - Password: `ChangeMe123!`
+- Navigate to the project: `MyLLMProject`
 - Confirm a new trace arrived for your chat completion request
-- Check metadata fields: `team_id`, `user_id`, `correlation_id`, token usage, latency
+- Check metadata fields: token usage, latency
 
 ### Option B: Buffer fallback verification
-If Langfuse is unavailable:
-- Stop the Langfuse service: `docker compose stop langfuse-web`
-- Send another request via LiteLLM (it should still succeed)
+If Langfuse is unavailable or not initialized:
 - Confirm LiteLLM returns a response (not blocked by trace failure)
 - Inspect `litellm/data/trace_buffer/trace_buffer.jsonl` on the host
 - If traces are buffered as JSONL, the offline resilience path is working
-- Start Langfuse again: `docker compose up langfuse-web`
-- Confirm the buffer flush task retries and moves traces to Langfuse
 
 ## 6. Test failure and retry behavior
 
@@ -208,3 +207,27 @@ Ensure the gateway uses the real `trace_buffer_dir` and `trace_buffer_max_size_m
 ## 8. Optional: Stronger real test
 
 Run a short load test against the gateway while Langfuse is healthy and while it is down to confirm request throughput, trace capture rate, and request resilience.
+
+## Current Implementation Status
+
+### ✅ Working
+- Docker Compose stack with separate PostgreSQL services
+- LiteLLM proxy with vLLM backend serving Qwen-3B model
+- API authentication with master key (`sk-1234`)
+- Langfuse service running and accessible
+- Trace buffer configuration for offline resilience
+
+### 🔄 In Progress
+- File-based API key authentication (configured but not active)
+- Langfuse automatic organization/project initialization
+- Trace delivery from LiteLLM to Langfuse
+
+### ❌ Known Issues
+- Custom API keys from `api_keys.json` not working (LiteLLM uses database auth despite file config)
+- Langfuse INIT environment variables not creating org/project on startup
+- Traces not appearing in Langfuse UI due to missing org/project
+
+### Workarounds
+- Use master key `sk-1234` for API authentication
+- Manual org/project setup in Langfuse UI when available
+- Verify traces in buffer file if Langfuse ingestion fails
