@@ -23,7 +23,7 @@ litellm_settings:
   failure_callback: ["langfuse"]
 
 general_settings:
-  # custom_auth: "config.custom_auth:custom_auth"
+  custom_auth: "config.custom_auth:CustomAuth"
 
 # Langfuse integration configuration
 langfuse_config:

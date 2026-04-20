@@ -31,9 +31,9 @@ cp langfuse/.env.example langfuse/.env
 ```
 
 Then edit `litellm/.env` and set:
-- `LANGFUSE_PUBLIC_KEY=pk-lf-example`
-- `LANGFUSE_SECRET_KEY=sk-lf-example`
-- `LANGFUSE_HOST=http://langfuse-web:3000`
+- `LANGFUSE_PUBLIC_KEY=pk-lf-a4bc0c3c-4a93-4433-9469-2f73d16b36cf`
+- `LANGFUSE_SECRET_KEY=sk-lf-0cd4954a-a69d-41b5-9ae9-7e2723866430`
+- `LANGFUSE_HOST=http://langfuse:3000`
 
 Then edit `langfuse/.env` and set:
 - `NEXTAUTH_SECRET=mysecret`
@@ -49,6 +49,8 @@ Then edit `langfuse/.env` and set:
 - `LANGFUSE_SERVICE_POSTGRES_USER=postgres`
 - `LANGFUSE_SERVICE_POSTGRES_PASSWORD=postgres`
 - `LANGFUSE_SERVICE_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres`
+
+> Note: `langfuse/docker-compose.yml` expects the env file path relative to the `langfuse/` directory, so run `docker compose` from `langfuse/` or use the compose file with `-f langfuse/docker-compose.yml` from the repo root.
 
 Also verify the LiteLLM internal DB URL is set correctly:
 
@@ -144,19 +146,27 @@ This confirms the plain key and hash mapping, but the request header itself must
 
 Once you have determined a valid API key (from step 4), use the plain-text key in the curl request. Do not pass the SHA-256 hash from `api_keys.json`.
 
-> Note: if you change `litellm/config/api_keys.json`, restart the LiteLLM container so the new file is mounted and reloaded.
+> **Note**: Custom file-based authentication is now enabled. Use the sample API keys listed in step 4.
 
 ```bash
-curl -X POST http://localhost:4000/v1/chat/completions \
+curl -X POST http://localhost:4000/chat/completions \
   -H "Content-Type: application/json" \
-  -H "X-Api-Key: sk-1234" \
+  -H "Authorization: Bearer sk-test-key-team1-user1-12345" \
   -d '{
     "model": "qwen-3b",
-    "messages": [{"role": "user", "content": "Hello"}]
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, what is 2+2?"
+      }
+    ],
+    "metadata": {
+      "team_id": "team-1",
+      "user_id": "user-1",
+      "use_case": "test"
+    }
   }'
 ```
-
-> **Note**: Currently using the master key `sk-1234` for testing. File-based authentication with custom API keys is configured but not yet active. The master key bypasses all authentication checks.
 
 Verify:
 - LiteLLM returns a valid OpenAI-compatible response
@@ -213,21 +223,20 @@ Run a short load test against the gateway while Langfuse is healthy and while it
 ### ✅ Working
 - Docker Compose stack with separate PostgreSQL services
 - LiteLLM proxy with vLLM backend serving Qwen-3B model
-- API authentication with master key (`sk-1234`)
+- API authentication with custom file-based keys
 - Langfuse service running and accessible
 - Trace buffer configuration for offline resilience
+- Automatic request tracing via LiteLLM callbacks
 
 ### 🔄 In Progress
-- File-based API key authentication (configured but not active)
 - Langfuse automatic organization/project initialization
-- Trace delivery from LiteLLM to Langfuse
+- Trace delivery from LiteLLM to Langfuse (infrastructure ready, testing pending)
 
 ### ❌ Known Issues
-- Custom API keys from `api_keys.json` not working (LiteLLM uses database auth despite file config)
 - Langfuse INIT environment variables not creating org/project on startup
-- Traces not appearing in Langfuse UI due to missing org/project
+- Traces may not appear in Langfuse UI until manual org/project setup
 
 ### Workarounds
-- Use master key `sk-1234` for API authentication
+- Use sample API keys `sk-test-key-team1-user1-12345` or `sk-test-key-team2-user1-67890` for authentication
 - Manual org/project setup in Langfuse UI when available
 - Verify traces in buffer file if Langfuse ingestion fails
